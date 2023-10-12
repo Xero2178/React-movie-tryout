@@ -497,13 +497,31 @@ const movieData = [
   },
 ];
 
-console.log(movieData);
+
+
+
 
 export default function App() {
   // const parse = movieData.json();
   // console.log(parse);
+
+  
+  
   const [addFavorite, setAddFavorite] = useState([]);
   const [sort, setSort] = useState(1);
+
+  let sortedItems;
+
+  if (sort === 1) sortedItems = movieData;
+  else if (sort === 2){ 
+    sortedItems = movieData.slice().sort((a, b) => Number(b.imdbRating) - Number(a.imdbRating));
+  }
+  else if (sort === 3)sortedItems = movieData
+  .slice()
+  .sort((a, b) => a.Title.localeCompare(b.Title));
+
+
+  
 
   const [search, setSearch] = useState("");
 
@@ -511,14 +529,23 @@ export default function App() {
 
   const [name, setName] = useState("");
 
+  const value = sortedItems.some((movie) => movie.Title.includes(`${name}`))
+
+  console.log(value);
+
   const [event, setEvent] = useState(true);
 
+  // const [find, setFind] = useState(value)
+
+  
   function handleSetName(e) {
     setName(e.target.value);
+    // setFind(e.target.value)
 
     
     setEvent(e.nativeEvent.data);
   }
+  // console.log(find);
 
   function handleClearName() {
     setName('')
@@ -536,17 +563,8 @@ export default function App() {
     setSort(Number(e.target.value));
   }
 
-  let sortedItems;
-
-  if (sort === 1) sortedItems = movieData;
-  else if (sort === 2){ 
-    sortedItems = movieData.slice().sort((a, b) => Number(b.imdbRating) - Number(a.imdbRating));
-  }
-  else if (sort === 3)sortedItems = movieData
-  .slice()
-  .sort((a, b) => a.Title.localeCompare(b.Title));
+  
     // console.log(sort);
-    console.log();
       
 
   
@@ -574,10 +592,12 @@ export default function App() {
     );
   }
 
+  
+
   return (
     <div className="flex justify-center items-center flex-col m-5 relative">
       <p className="text-3xl font-bold text-center mb-7">KIJJI'S MOVIES</p>
-      <Header
+      <Header 
         sort={sort}
         onSort={handleSort}
         search={search}
@@ -585,9 +605,10 @@ export default function App() {
         name={name}
         onSetName={handleSetName}
         onClearName={handleClearName}
+        
       />
       {about && <AboutMovie onSetAbout={handleSetAbout} about={about} />}
-      <MovieTheatre
+      {!value ? <MovieTheatre
         onAddToFavorite={handleAddFavorite}
         sort={sort}
         search={search}
@@ -596,7 +617,7 @@ export default function App() {
         event={event}
         name={name}
         sortedItems={sortedItems}
-      />
+      /> : <SearchedMovie onAddToFavorite={handleAddFavorite} onSetAbout={handleSetAbout} about={about} name={name} sortedItems={sortedItems}/>}
       <Favorites
         addFavorite={addFavorite}
         onAddToFavorite={handleAddFavorite}
@@ -606,7 +627,7 @@ export default function App() {
   );
 }
 
-function Header({ sort, onSort, name, onSetName, onClearName}) {
+function Header({ sort, onSort, name, onSetName, onClearName, onSetFind}) {
   return (
     <form className="max-w-2xl flex justify-around items-center w-full">
       <select
@@ -639,34 +660,9 @@ function MovieTheatre({
   event,
   name
 }) {
-
-  // console.log(sortedItems);
-  const isSelected = sortedItems.find(
-    (movie) =>
-      movie.Title === name && <Movie onSetAbout={onSetAbout} about={about} />
-  );
-
-  // console.log(isSelected);
-
-
-  //   if(!isSelected) {
-  //     return(
-  //       <div className="movie-theatre grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-5xl xl:grid-cols-5 m-5">
-  //         {movieData.slice().map((movie) => <Movie movie={movie} onAddToFavorite={onAddToFavorite} onSetAbout ={onSetAbout} about={about}/>)}
-  //       </div>
-  //     )
-  //   }if(isSelected){
-  //     return(
-  //       <div className="movie-theatre grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-5xl xl:grid-cols-5 m-5">
-  //         {movieData.map((movie) => movie.Title === name ? <Movie movie={movie} onAddToFavorite={onAddToFavorite} onSetAbout ={onSetAbout} about={about}/> : null)}
-  //       </div>
-  //     )
-  //   }
-
   return (
     <div className="movie-theatre grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-5xl xl:grid-cols-5 m-5">
-      {!isSelected
-        ? sortedItems
+      {sortedItems
             .map((movie) => (
               <Movie
                 movie={movie}
@@ -676,19 +672,23 @@ function MovieTheatre({
                 key={movie.imdbID}
               />
             ))
-        : sortedItems.map(
-            (movie) =>
-              movie.Title === name && (
-                <Movie
-                  movie={movie}
-                  onAddToFavorite={onAddToFavorite}
-                  onSetAbout={onSetAbout}
-                  about={about}
-                />
-              )
-          )}
+        }
     </div>
   );
+}
+
+function SearchedMovie({sortedItems, onAddToFavorite, onSetAbout, about, name}){
+
+  const searchedMovie = sortedItems.filter((movie) => movie.Title.includes(`${name}`));
+
+
+
+
+  return(
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-5xl xl:grid-cols-5 m-5">
+    {searchedMovie.map((movie) => <Movie movie={movie} onAddToFavorite={onAddToFavorite} onSetAbout={onSetAbout} about={about} key={movie.imbdID}/>)}
+  </div>
+  )
 }
 
 function Movie({ movie, onAddToFavorite, onSetAbout }) {
@@ -726,7 +726,7 @@ function AboutMovie({ about, onSetAbout }) {
   return (
     <div
       className={`${
-        about ? "static z-10 top-[100%] w-full h-[610px]  bg-white" : "hidden"
+        about ? "absolute z-10 top-[10%] w-full h-[610px]  bg-white" : "hidden"
       }`}
     >
       <div
@@ -768,6 +768,7 @@ function Favorites({ addFavorite, onAddToFavorite, onRemoveFavorite }) {
             onAddToFavorite={onAddToFavorite}
             onRemoveFavorite={onRemoveFavorite}
             addFavorite={addFavorite}
+            key={favMovie.imbdID}
           />
         ))}
       </div>
